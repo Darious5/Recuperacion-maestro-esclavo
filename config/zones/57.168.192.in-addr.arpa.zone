@@ -1,0 +1,17 @@
+$TTL 7200
+@   IN  SOA tierra.sistema.test. admin.sistema.test. (
+        2025010101 ; Serial
+        3600       ; Refresh
+        1800       ; Retry
+        604800     ; Expire
+        7200 )     ; Negative Cache TTL
+
+; Servidores de nombres
+    IN  NS  ns1.sistema.test.
+    IN  NS  ns2.sistema.test.
+
+; Registros PTR
+101 IN PTR mercurio.sistema.test.
+102 IN PTR venus.sistema.test.
+103 IN PTR tierra.sistema.test.
+104 IN PTR marte.sistema.test.

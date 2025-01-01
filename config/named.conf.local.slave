@@ -1,0 +1,13 @@
+// Zona directa
+zone "sistema.test" {
+    type slave;
+    masters { 192.168.57.103; };
+    file "/etc/bind/zones/sistema.test.slave";
+};
+
+// Zona inversa
+zone "57.168.192.in-addr.arpa" {
+    type slave;
+    masters { 192.168.57.103; };
+    file "/etc/bind/zones/57.168.192.in-addr.arpa.slave";
+};

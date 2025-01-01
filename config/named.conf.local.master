@@ -1,0 +1,11 @@
+// Zona directa
+zone "sistema.test" {
+    type master;
+    file "/etc/bind/zones/sistema.test.zone";
+};
+
+// Zona inversa
+zone "57.168.192.in-addr.arpa" {
+    type master;
+    file "/etc/bind/zones/57.168.192.in-addr.arpa.zone";
+};
