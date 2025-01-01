@@ -55,3 +55,12 @@
         Una vez hecho esto, debemos de reiniciar el servicio bind, para que se aplique la configuracion con los archivos que hemos provisionado.
         Esto lo haremos con el comando "systemctl restart bind9".
     </p>
+    <h2>Probar si funciona</h2>
+    <p>
+        Para probar si funciona simplemente tenemos que pasar el script que nos ha dado el profesor, en este caso se llama test.sh.
+        Vamos a usar el .sh porque lo vamos a probar en linux, en caso de querer hacerlo en windows usariamos el .bat.
+        Tenemos que copiar el archivo en las dos maquinas, con cp "/vagrant/test.sh ." deberiamos poder copiarlo en la carpeta actual.
+        Una vez hecho esto, debemos de cambiar sus permisos para conseguir poder ejecutarlo, lo haremos con "chmod 777 test.sh",
+        y ya estariamos listos para probarlo, para ejecutarlo simplemente tenemos que poner ./test.sh 'ip DNS'.
+        En caso de no saber la ip del DNS, podemos usar el comando "ip a" dentro de la maquina en concreto para ver que direccion tiene la maquina en la que estamos, la cual va a ser la direccion ip del maestro o del esclavo, dependiendo de en que maquina estes.
+    </p>
