@@ -64,3 +64,8 @@
         y ya estariamos listos para probarlo, para ejecutarlo simplemente tenemos que poner ./test.sh 'ip DNS'.
         En caso de no saber la ip del DNS, podemos usar el comando "ip a" dentro de la maquina en concreto para ver que direccion tiene la maquina en la que estamos, la cual va a ser la direccion ip del maestro o del esclavo, dependiendo de en que maquina estes.
     </p>
+    <h2>DISCLAIMER</h2>
+    <p>
+        Para estar seguro de que iba, he cambiado el archivo test.sh para indicar si ha funcionado correctamente cada prueba,
+        en caso de querer usar el original, descarguelo de la pagina de moodle y no use la que proporciono con la practica.
+    </p>
