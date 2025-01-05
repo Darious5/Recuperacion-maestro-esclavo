@@ -1,95 +1,71 @@
-# bad.example.com Round#1
-
-## Servers
-
-- `bad.example.com` authorized nameserver on `example.com`
-  with IP `192.168.57.2/24`
-
-## Network
-
-- Private network `192.168.57.0/24`.
-- Requires a Host-only network adapter in your host.
-
-## Deploy
-
-    vagrant up
-
-## Errors found
-
-### named.conf.local
-
-We can see that in that file, the reverse zone path is `/var/lib/bin/192.168.57.dns`, we can see that the `bin` part is wrong
-In order to fix it, we need to change `bin` to `bind`.
-
-Also, we can see that in that file, the path for the example zone is `/var/lib/bind/example.com.dns.`.
-There is an extra period at the end that we should remove in order for it to work, it should look like this:
-`/var/lib/bind/example.com.dns`
-
-### named.conf.options
-
-The recursion is disabled, because of this, it can produce some errors, so its better for us to keep it enabled.
-change `recursion no;` to `recursion yes;`
-
-We should also add the line `allow-query { any; };` so everyone is allowed to use queries, this is because
-bind9 may disable queries for some users, and the query could fail if that happens.
-
-Also, if we dont need it, `dnssec-validation yes;` could give us problems, so its better to have it shut down,
-to do that, we just change it to this: `dnssec-validation no;`
-
-We also have to make sure that we add ; at the end of the options
-
-### example.com.dns
-
-The $ORIGIN is not what it should be, it is set to `$ORIGIN example.org.` when it should be a .com `$ORIGIN example.com.`
-Use fully qualified domain names in the zone, `@     IN  NS      bad.` to `@     IN  NS      bad.example.com.`.
-For the A register, dont use `bad.  IN  A       192.168.57.2`, we need t o remove the period from bad,
-It should look like this: `bad  IN  A       192.168.57.2`.
-    
-### 192.168.57.dns
-
-The records for the inverse zones are not fully qualified, we need to add a period at the end of them to ensure that they are.
-`2   IN	PTR	bad.example.com 3   IN  PTR     www.example.com` to `2   IN	PTR	bad.example.com. 3   IN  PTR     www.example.com.`.
-    
-### Vagrantfile
-
-We have to be sure that the copied files have the right permissions, so we can add to the vagrant file this lines to ensure that happens.
-`chown bind:bind /var/lib/bind/example.com.dns /var/lib/bind/192.168.57.dns`
-`chmod 644 /var/lib/bind/example.com.dns /var/lib/bind/192.168.57.dns`
-
-## Test
-
-### Is bind9 active and running?
-vagrant@bad:~$ systemctl status bind9
-● named.service - BIND Domain Name Server
-     Loaded: loaded (/lib/systemd/system/named.service; enabled; vendor preset: enabled)
-     Active: `active (running)` since Sun 2025-01-05 12:34:14 UTC; 8s ago
-       Docs: man:named(8)
-   Main PID: 2035 (named)
-      Tasks: 8 (limit: 2322)
-     Memory: 16.6M
-        CPU: 29ms
-     CGroup: /system.slice/named.service
-             └─2035 /usr/sbin/named -f -u bind
-
-We can see that it is.
-
-### Test nslookup
-
-vagrant@bad:~$ nslookup bad.example.com localhost
-Server:         localhost
-Address:        ::1#53
-
-Name:   bad.example.com
-Address: 192.168.57.2
-
-we can see that it also works
-
-### Ensuring that everything works with debug commands
-
-vagrant@bad:~$ sudo named-checkconf
-vagrant@bad:~$ sudo named-checkzone example.com /var/lib/bind/example.com.dns
-zone example.com/IN: loaded serial 1
-OK
-
-Because `sudo named-checkconf` didn't returned anything, it means that it has no issues, also, because the seccond command 
-returned that the zone was loaded, we can confirm that everything went how it should had.
+<h1>Recuperacion Master/Slave</h1>
+<h2>Configuracion inicial</h2>
+<p>
+    Al principio, creamos el creamos el archivo Vagrantfile en el directorio en el que hagamos la practica usando en la terminal
+    "vagrant init", una vez hayamos hecho eso, la plantilla para el Vagrantfile deberia salir en el directorio en el que hemos 
+    ejecutado el comando.
+</p>
+<h2>Configurando el Vagrantfile</h2>
+<p>
+    Para empezar, tenemos que crear dos maquinas, una sera el servidor DNS maestro y la otra el servidor DNS esclavo.
+    Tendremos que asignarle la ip correspondiente a cada una de las maquinas e instalar BIND9, gracias a que son servidores DNS
+</p>
+<h2>Iniciamos Maquinas</h2>
+<p>
+    Una vez tengamos la base del Vagrantfile, podemos iniciarlo con "vagrant up", una vez usado este comando, nos podemos meter
+    en las respectivas maquinas con "vagrant ssh 'vmname'", en este caso nos interesa sacar las plantillas de los archivos de Configuracion
+    de BIND9, como en ambas maquinas esta instalado BIND9, podemos hacerla en cualquier de los dos, solo nos tendriamos que meter en la ruta
+    "/etc/bind" y ahi estan todos los archivos de configuracion necesarios, los cuales podemos copiar a nuestro directorio en la maquina host con
+    el comando "cp" en la ruta "/vagrant".
+</p>
+<h2>Archivos de configuracion</h2>
+<p>Debemos de editar los archivos de configuracion que hemos copiado anteriormente, para esto debemos editar los siguientes.</p>
+    <h3>/etc/default/bind9</h3>
+    <p>
+        Aqui solo deberemos añadir la linea 'OPTIONS="-4"', la cual hace que use el protocolo IPV4, como es solo una linea, no hace falta que creemos un archivo
+        y lo provisionemos con vagrant, podemos simplemente usar en la provision un echo para que cambie el contenido del archivo original por 'OPTIONS="-4"' y 
+        asi conseguir la configuracion ahorrandonos un archivo mas, esto podriamos hacerlo para todos los archivos, pero el resto al ser mas largos, es preferible
+        por comodidad y por legibilidad, crearlos aparte en una carpeta de configuracion y acto seguido provisionarlo con vagrant.
+    </p>
+    <h3>named.conf.options</h3>
+    <p>
+        Primero la configuracion de BIND9, esta se llamara "named.conf.options", aqui deberemos asignar la configuracion de el servidor dns.
+        En este caso es importante poner que el forwarder sea la ip 208.67.222.222, que haya Validación DNSSEC y que solo escuche IPv4.
+        Este archivo debera estar en ambas maquinas en la direccion "/etc/bind/named.conf.options".
+    </p>
+    <h3>named.conf.local</h3>
+    <p>
+        Despues hemos de cambiar named.conf.local, en este caso deberemos de dividirlo en dos, uno para la maquina master y otra para la slave.
+        En este archivo, configuramos las zonas que ha de resolver el servidor DNS, como tambien que servidor es su maestro o cual es su esclavo respectivamente,
+        Para esto hemos de poner que tipo de servidor es, en caso de ser esclavo poner cual es su maestro, el nombre de la zona y el archivo con la informacion
+        de las direcciones ips de esa zona en concreto. Este archivo se debe encontrar en "/etc/bind/named.conf.local"
+    </p>
+    <h3>zonas directas e inversas</h3>
+    <p>
+        En este caso nos falta añadir informacion a los archivos a los que hemos llamado en named.conf.local con la informacion con la que tiene que resolver cada zona,
+        para esto, debemos de añadir las direcciones correspondientes, tanto para servidores de nombres, como para direcciones de mail, inversas, etc.
+        Primero configuramos las directas en un archivo, lo vamos a llamar "sistema.test.zone", y despues las inversas han de ir en otro archivo especifico para ellas,
+        el cual deberiamos tambien haber copiado la plantilla, y lo llamamos 57.168.192.in-addr.arpa.zone, se debera llamar asi gracias a que las resoluciones inversas
+        se escriben con la ip al reves en la zona addr.arpa. en este caso, al ser resoluciones inversas, no debemos usar los registros A, ya que estos son para direcciones IPV4,
+        debemos usar PTR, que es el nombre de registro que se usa para direcciones inversas.
+        Estos archivos se deben encontrar en "/etc/bind/zones/sistema.test.zone" y en /etc/bind/zones/57.168.192.in-addr.arpa.zone respectivamente.
+    </p>
+    <h3>Finalizar configuracion</h3>
+    <p>
+        Una vez hecho esto, debemos de reiniciar el servicio bind, para que se aplique la configuracion con los archivos que hemos provisionado.
+        Esto lo haremos con el comando "systemctl restart bind9".
+    </p>
+    <h2>Probar si funciona</h2>
+    <p>
+        Para probar si funciona simplemente tenemos que pasar el script que nos ha dado el profesor, en este caso se llama test.sh.
+        Vamos a usar el .sh porque lo vamos a probar en linux, en caso de querer hacerlo en windows usariamos el .bat.
+        Tenemos que copiar el archivo en las dos maquinas, con cp "/vagrant/test.sh ." deberiamos poder copiarlo en la carpeta actual.
+        Una vez hecho esto, debemos de cambiar sus permisos para conseguir poder ejecutarlo, lo haremos con "chmod 777 test.sh",
+        y ya estariamos listos para probarlo, para ejecutarlo simplemente tenemos que poner ./test.sh 'ip DNS'.
+        En caso de no saber la ip del DNS, podemos usar el comando "ip a" dentro de la maquina en concreto para ver que direccion tiene la maquina en la que estamos, la cual va a ser la direccion ip del maestro o del esclavo, dependiendo de en que maquina estes.
+    </p>
+    <h2>DISCLAIMER</h2>
+    <p>
+        Para estar seguro de que iba, he cambiado el archivo test.sh para indicar si ha funcionado correctamente cada prueba,
+        en caso de querer usar el original, descarguelo de la pagina de moodle y no use la que proporciono con la practica.
+    </p>
