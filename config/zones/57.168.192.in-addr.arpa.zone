@@ -4,8 +4,8 @@ $TTL 7200
         3600       ; Refresh
         1800       ; Retry
         604800     ; Expire
-        7200 )     ; Negative Cache TTL
-
+        7200       ; Negative Cache TTL
+)
 ; Servidores de nombres
     IN  NS  ns1.sistema.test.
     IN  NS  ns2.sistema.test.
